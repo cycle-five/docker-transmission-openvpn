@@ -2,35 +2,140 @@ version: '2'
 services:
  transmission:
   image: haugene/transmission-openvpn
+  container_name: transmission
   cap_add:
     - NET_ADMIN
   devices:
     - /dev/net/tun
   restart: always
   ports:
-    - "9091:9091"
-    # - "8888:8888" # proxy support
+    - "9091:9091" # transmission
+    - "7878:7878" # radarr
+    - "9117:9117" # jacket
+    - "9696:9696" # prowlarr
+    - "8989:8989" # sonarr
+    - "5299:5299" # lazylibrarian
+    - "6789:6789" # nzbget
+    #- "::1:9092:9092"
+    #- "127.0.0.1:9092:9092"
+    #- "8888:8888" # proxy support
   volumes:
-    - /your/storage/path/:/data # where transmission will store the data
-    - /your/config/path/:/config # where transmission-home is stored
+    - /opt/transmission/data/:/data # where transmission will store the data
+    - /opt/transmission/config/:/config # where transmission-home is stored
   environment:
+    # Support different ways to pass UID and GID
+    - PUID=1001
+    - PGID=1001
+    - TZ=Europe/Helsinki
+    #
     - OPENVPN_PROVIDER=PIA
-    - OPENVPN_USERNAME=username
-    - OPENVPN_PASSWORD=password
-    - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
-    - LOCAL_NETWORK=192.168.0.0/24
- # proxy:
- #  image: haugene/transmission-openvpn-proxy
- #  links:
- #    - transmission
- #  ports:
- #    - 8080:8080
- #  volumes:
- #    - /etc/localtime:/etc/localtime:ro
-
- # rss:
- #  image: haugene/transmission-rss
- #  links:
- #    - transmission
- #  environment:
- #    - RSS_URL=http://.../xxxxx.rss
+    - OPENVPN_CONFIG=us_new_york
+    - OPENVPN_USERNAME=p1424225
+    - OPENVPN_PASSWORD=Sprang#Catapult#Unlucky6
+    - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60 #--pull-filter ignore ping
+    - CREATE_TUN_DEVICE=true
+      #- TRANSMISSION_RPC_PORT=9091
+      #- OVERRIDE_DNS_1=8.8.8.8
+      #- OVERRIDE_DNS_2=8.8.4.4
+      #- LOCAL_NETWORK=10.0.0.0/24
+      # - LOCAL_NETWORK=192.168.0.0/16
+  sysctls:
+    - net.ipv6.conf.all.disable_ipv6=0
+# proxy:
+#   image: haugene/transmission-openvpn-proxy
+#   links:
+#     - transmission
+#   ports:
+#     - 8080:8080
+#   volumes:
+#     - /etc/localtime:/etc/localtime:ro
+ radarr:
+   image: linuxserver/radarr
+   container_name: radarr
+   volumes:
+     - /opt/radarr:/config
+     - /opt/movies:/movies
+     - /mnt/nas0/jellyfin/movies:/movies2
+     - /mnt/nas1/movies:/movies3
+     - /opt/transmission/data/completed:/data/completed
+     - /opt/usenet/downloads/:/downloads
+     - /etc/localtime:/etc/localtime:ro
+   env_file:
+     - .env
+   restart: unless-stopped
+   network_mode: "service:transmission"
+   depends_on:
+     - "transmission"
+ prowlarr:
+   image: lscr.io/linuxserver/prowlarr:nightly
+   container_name: prowlarr
+   restart: unless-stopped
+   env_file:
+     - .env
+   volumes:
+     - /opt/prowlarr/:/config
+   network_mode: "service:transmission"
+   depends_on:
+     - "transmission"
+ jackett:
+   image: linuxserver/jackett
+   container_name: jackett
+   restart: always
+   env_file:
+     - .env
+   volumes:
+     - /opt/jackett/:/config
+     - /opt/transmission/data/watch/:/downloads
+     - /etc/localtime:/etc/localtime:ro
+   network_mode: "service:transmission"
+   depends_on:
+     - "transmission"
+ sonarr:
+  image: linuxserver/sonarr
+  container_name: sonarr
+  volumes:
+    - /opt/sonarr/:/config
+    - /mnt/nas0/jellyfin/shows/:/tv
+    - /mnt/nas1/shows/:/tv/tv2
+    - /opt/transmission/data/completed:/data/completed
+    - /opt/usenet/downloads/:/downloads
+    - /etc/localtime:/etc/localtime:ro
+  env_file:
+    - .env
+  restart: unless-stopped
+  network_mode: "service:transmission"
+  depends_on:
+    - "transmission"
+ lazylibrarian:
+  image: lscr.io/linuxserver/lazylibrarian:latest
+  container_name: lazylibrarian
+  environment:
+    - PUID=1001
+    - PGID=1001
+    - TZ=Europe/Helsinki
+    - DOCKER_MODS=ghcr.io/linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg #optional
+  volumes:
+    - /opt/lazylibrarian/:/config
+    - /opt/usenet/downloads/:/downloads
+    - /opt/usenet/books/:/books #optional
+    - /etc/localtime:/etc/localtime:ro
+  restart: unless-stopped
+  network_mode: "service:transmission"
+  depends_on:
+    - "transmission"
+ nzbget:
+  image: lscr.io/linuxserver/nzbget:latest
+  container_name: nzbget
+  environment:
+    - PUID=1001
+    - PGID=1001
+    - TZ=Europe/Helsinki
+    - NZBGET_USER=nzbget #optional
+    - NZBGET_PASS=tegbzn6789 #optional
+  volumes:
+    - /opt/usenet/:/config
+    - /opt/usenet/downloads/:/downloads #optional
+  restart: unless-stopped
+  network_mode: "service:transmission"
+  depends_on:
+    - "transmission"
