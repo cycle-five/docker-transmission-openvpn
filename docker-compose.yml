@@ -29,11 +29,11 @@ services:
     - TZ=Europe/Helsinki
     #
     - OPENVPN_PROVIDER=PIA
-    - OPENVPN_CONFIG=us_new_york
+      #- OPENVPN_CONFIG=us_new_york
     - OPENVPN_USERNAME=p1424225
     - OPENVPN_PASSWORD=Sprang#Catapult#Unlucky6
     - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60 #--pull-filter ignore ping
-    - CREATE_TUN_DEVICE=true
+      #- CREATE_TUN_DEVICE=true
       #- TRANSMISSION_RPC_PORT=9091
       #- OVERRIDE_DNS_1=8.8.8.8
       #- OVERRIDE_DNS_2=8.8.4.4

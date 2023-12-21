@@ -95,7 +95,7 @@ ENV OPENVPN_USERNAME=**None** \
     OPENVPN_OPTS= \
     GLOBAL_APPLY_PERMISSIONS=true \
     TRANSMISSION_HOME=/config/transmission-home \
-    TRANSMISSION_RPC_PORT=9091 \
+    TRANSMISSION_RPC_PORT=9092 \
     TRANSMISSION_RPC_USERNAME= \
     TRANSMISSION_RPC_PASSWORD= \
     TRANSMISSION_DOWNLOAD_DIR=/data/completed \
@@ -131,7 +131,7 @@ LABEL autoheal=true
 # Expose ports and run
 
 #Transmission-RPC
-EXPOSE 9091
+EXPOSE 9092
 # Privoxy
 EXPOSE 8118
 
